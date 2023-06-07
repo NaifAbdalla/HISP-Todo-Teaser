@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
 
@@ -15,16 +17,16 @@ class Todo extends Controller
     /*
      * Display all Todos
      */
-    public function index(): View
+    public function index(): \Illuminate\Http\Response
     {
         $response = Http::withBasicAuth('admin', 'district')->get($this->url, [
             'fields' => '.',
         ]);
-        $data = $response->collect('entries')->sortBy('value.created');
-        $pager = $response->collect('pager');
+        $collection = $response->collect('entries')->sortBy('value.created');
+
         $id = 'todo-' . $this->counter();
 
-        return view('todos', ['data' => $data, 'pager' => $pager, 'id' => $id]);
+        return response()->view('todos', ['data' => $collection, 'id' => $id]);
     }
 
     /*
@@ -45,7 +47,7 @@ class Todo extends Controller
             'title' => 'required'
         ]);
         $completed = $request->get('completed') ? true : false;
-        $response = Http::withBasicAuth('admin', 'district')->post($this->url . '/' . $id, [
+        Http::withBasicAuth('admin', 'district')->post($this->url . '/' . $id, [
             'id' => $id,
             'title' => $request->get('title'),
             'description' => $request->get('description'),
